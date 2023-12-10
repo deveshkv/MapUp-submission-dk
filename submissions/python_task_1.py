@@ -31,9 +31,12 @@ def get_type_count(df)->dict:
     Returns:
         dict: A dictionary with car types as keys and their counts as values.
     """
-    # Write your logic here
-
-    return dict()
+     # Using value_counts to count occurrences of each car type
+    df['car'] = pd.cut(df['car'], bins=[float('-inf'), 15, 25, float('inf')], labels=['low', 'medium', 'high'])
+    type_counts = df['car'].value_counts().to_dict()
+    type_counts = dict(sorted(type_counts.items()))
+    return type_counts
+   
 
 
 def get_bus_indexes(df)->list:
@@ -46,9 +49,15 @@ def get_bus_indexes(df)->list:
     Returns:
         list: List of indexes where 'bus' values exceed twice the mean.
     """
-    # Write your logic here
+     # Calculate the mean of 'bus' values
+    bus_mean = df['bus'].mean()
+    
+    # Find indexes where 'bus' values exceed twice the mean
+    bus_indexes = df[df['bus'] > 2 * bus_mean].index.tolist()
+    
+    return sorted(bus_indexes)
 
-    return list()
+  
 
 
 def filter_routes(df)->list:
@@ -61,9 +70,13 @@ def filter_routes(df)->list:
     Returns:
         list: List of route names with average 'truck' values greater than 7.
     """
-    # Write your logic here
-
-    return list()
+    # Group by 'route' and calculate the mean of 'truck' values for each route
+    route_means = df.groupby('route')['truck'].mean()
+    
+    # Filter routes with average 'truck' values greater than 7
+    selected_routes = route_means[route_means > 7].index.tolist()
+    
+    return selected_routes
 
 
 def multiply_matrix(matrix)->pd.DataFrame:
@@ -76,9 +89,11 @@ def multiply_matrix(matrix)->pd.DataFrame:
     Returns:
         pandas.DataFrame: Modified matrix with values multiplied based on custom conditions.
     """
-    # Write your logic here
-
-    return matrix
+     # Custom condition: Multiply values by 2 if greater than 20, otherwise multiply by 1.25
+    modified_matrix = result1.copy()
+    modified_matrix = modified_matrix.applymap(lambda x: x * 0.75 if x > 20 else x*1.25)
+    modified_matrix = modified_matrix.round(1)
+    return modified_matrix
 
 
 def time_check(df)->pd.Series:
@@ -91,6 +106,40 @@ def time_check(df)->pd.Series:
     Returns:
         pd.Series: return a boolean series
     """
-    # Write your logic here
+   def verify_time_completeness(df):
+   
+    # Combine startDay and startTime to create the 'start_timestamp' column
+    df['start_timestamp'] = pd.to_datetime(df['startDay'] + ' ' + df['startTime'])
+    
+    # Combine endDay and endTime to create the 'end_timestamp' column
+    df['end_timestamp'] = pd.to_datetime(df['endDay'] + ' ' + df['endTime'])
+    
+    # Extract day of the week and hour from start_timestamp
+    df['day_of_week'] = df['start_timestamp'].dt.dayofweek
+    df['hour'] = df['start_timestamp'].dt.hour
 
-    return pd.Series()
+    # Group by (id, id_2) and check completeness
+    completeness_check = df.groupby(['id', 'id_2']).apply(check_completeness)
+
+    return completeness_check
+
+def check_completeness(group):
+    """
+    Check completeness of time data for a specific (id, id_2) pair.
+
+    Args:
+        group (pandas.DataFrame): Grouped DataFrame for a specific (id, id_2) pair.
+
+    Returns:
+        bool: True if timestamps are complete, False otherwise.
+    """
+    # Check if timestamps cover a full 24-hour period
+    hours_covered = set(group['hour'])
+    full_day_coverage = len(hours_covered) == 24
+
+    # Check if timestamps span all 7 days of the week
+    days_covered = set(group['day_of_week'])
+    full_week_coverage = len(days_covered) == 7
+
+    # Return True if timestamps are complete, False otherwise
+    return full_day_coverage and full_week_coverage
