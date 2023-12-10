@@ -12,9 +12,13 @@ def generate_car_matrix(df)->pd.DataFrame:
         pandas.DataFrame: Matrix generated with 'car' values, 
                           where 'id_1' and 'id_2' are used as indices and columns respectively.
     """
-    # Write your logic here
-
-    return df
+   # Pivot the DataFrame to create the desired matrix
+    car_matrix = df.pivot(index='id_1', columns='id_2', values='car')
+    #Due to above line data set having null values at diagonal
+    # Fill missing values with 0
+    car_matrix.fillna(0, inplace=True)
+    
+    return car_matrix
 
 
 def get_type_count(df)->dict:
